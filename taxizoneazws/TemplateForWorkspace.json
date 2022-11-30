@@ -1,0 +1,136 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"workspaceName": {
+			"type": "string",
+			"metadata": "Workspace name",
+			"defaultValue": "taxizoneazws"
+		},
+		"taxizoneazws-WorkspaceDefaultSqlServer_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'taxizoneazws-WorkspaceDefaultSqlServer'"
+		},
+		"taxizoneazws-WorkspaceDefaultStorage_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://nyctaxizoneadls.dfs.core.windows.net"
+		}
+	},
+	"variables": {
+		"workspaceId": "[concat('Microsoft.Synapse/workspaces/', parameters('workspaceName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('workspaceName'), '/taxizoneazws-WorkspaceDefaultSqlServer')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"parameters": {
+					"DBName": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlDW",
+				"typeProperties": {
+					"connectionString": "[parameters('taxizoneazws-WorkspaceDefaultSqlServer_connectionString')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/taxizoneazws-WorkspaceDefaultStorage')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('taxizoneazws-WorkspaceDefaultStorage_properties_typeProperties_url')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/AutoResolveIntegrationRuntime')]",
+			"type": "Microsoft.Synapse/workspaces/integrationRuntimes",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "Managed",
+				"typeProperties": {
+					"computeProperties": {
+						"location": "AutoResolve",
+						"dataFlowProperties": {
+							"computeType": "General",
+							"coreCount": 8,
+							"timeToLive": 0
+						}
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/WorkspaceSystemIdentity')]",
+			"type": "Microsoft.Synapse/workspaces/credentials",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "ManagedIdentity",
+				"typeProperties": {}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/1_External_Dataproceed_Serverless_SQLPool')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "SELECT * FROM sys.dm_external_data_processed\n\nSELECT * FROM sys.configurations WHERE NAME LIKE '%Data Processed%'\n\nsp_set_data_processed_limit\n\t@type = N'daily',\n\t@limit_tb = 1\n\nsp_set_data_processed_limit\n\t@type= N'weekly',\n\t@limit_tb = 1\n\nsp_set_data_processed_limit\n\t@type= N'monthly',\n\t@limit_tb = 2\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "Demo",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/2_ReadCSV file')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "-- This is auto-generated code\nSELECT\n    TOP 100 *\nFROM\n    OPENROWSET(\n        BULK 'https://nyctaxizoneadls.dfs.core.windows.net/nyctaxidata/raw/taxi_zone.csv',\n        FORMAT = 'CSV',\n        HEADER_ROW = True,\n        PARSER_VERSION = '2.0'\n    ) AS [result]\n\nSELECT\n    TOP 100 *\nFROM\n    OPENROWSET(\n        BULK 'abfss://nyctaxidata@nyctaxizoneadls.dfs.core.windows.net/raw/taxi_zone.csv',\n        FORMAT = 'CSV',\n        HEADER_ROW = True,\n        PARSER_VERSION = '2.0'\n    ) AS [result]\n\n\nSELECT\n    TOP 100 *\nFROM\n    OPENROWSET(\n        BULK 'abfss://nyctaxidata@nyctaxizoneadls.dfs.core.windows.net/raw/taxi_zone.csv',\n        FORMAT = 'CSV',\n        HEADER_ROW = True,\n        PARSER_VERSION = '2.0',\n        FIELDTERMINATOR=',',\n        ROWTERMINATOR ='\\n'\n    ) AS [result]\n\nEXEC sp_describe_first_result_set N'\nSELECT\n    TOP 100 *\nFROM\n    OPENROWSET(\n        BULK ''abfss://nyctaxidata@nyctaxizoneadls.dfs.core.windows.net/raw/taxi_zone.csv'',\n        FORMAT = ''CSV'',\n        HEADER_ROW = True,\n        PARSER_VERSION = ''2.0''\n    ) AS [result]'\n\n\nSELECT\n    MAX(LEN(LocationID)) AS LengthLocationID,\n    MAX(LEN(Borough)) AS LengthBorough,\n    MAX(LEN(Zone)) AS Lengthzone,\n    MAX(LEN(service_zone)) AS Maxservicezone\nFROM\n    OPENROWSET(\n        BULK 'abfss://nyctaxidata@nyctaxizoneadls.dfs.core.windows.net/raw/taxi_zone.csv',\n        FORMAT = 'CSV',\n        HEADER_ROW = True,\n        PARSER_VERSION = '2.0',\n        FIELDTERMINATOR=',',\n        ROWTERMINATOR ='\\n'\n    )WITH\n    ( LocationID SMALLINT,\n    Borough VARCHAR(100),\n    Zone VARCHAR(100),\n    service_zone VARCHAR(100)\n    ) AS [result]\n\n\nSELECT\n    *\nFROM\n    OPENROWSET(\n        BULK 'abfss://nyctaxidata@nyctaxizoneadls.dfs.core.windows.net/raw/taxi_zone.csv',\n        FORMAT = 'CSV',\n        HEADER_ROW = True,\n        PARSER_VERSION = '2.0',\n        FIELDTERMINATOR=',',\n        ROWTERMINATOR ='\\n'\n    )WITH\n    ( LocationID SMALLINT,\n    Borough VARCHAR(100),\n    Zone VARCHAR(100),\n    service_zone VARCHAR(100)\n    ) AS [result]\n\n\nSELECT name,collation_name FROM sys.databases\n\nSELECT\n    *\nFROM\n    OPENROWSET(\n        BULK 'abfss://nyctaxidata@nyctaxizoneadls.dfs.core.windows.net/raw/taxi_zone.csv',\n        FORMAT = 'CSV',\n        HEADER_ROW = True,\n        PARSER_VERSION = '2.0',\n        FIELDTERMINATOR=',',\n        ROWTERMINATOR ='\\n'\n    )WITH\n    ( LocationID SMALLINT ,\n    Borough VARCHAR(100) COLLATE Latin1_General_100_CI_AI_SC_UTF8,\n    Zone VARCHAR(100) COLLATE Latin1_General_100_CI_AI_SC_UTF8,\n    service_zone VARCHAR(100) COLLATE Latin1_General_100_CI_AI_SC_UTF8\n    ) AS [result]\n\n\n\n\n\n\n\n\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "Demo",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		}
+	]
+}
