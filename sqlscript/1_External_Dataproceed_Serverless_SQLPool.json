@@ -1,0 +1,17 @@
+{
+	"name": "1_External_Dataproceed_Serverless_SQLPool",
+	"properties": {
+		"content": {
+			"query": "SELECT * FROM sys.dm_external_data_processed\n\nSELECT * FROM sys.configurations WHERE NAME LIKE '%Data Processed%'\n\nsp_set_data_processed_limit\n\t@type = N'daily',\n\t@limit_tb = 1\n\nsp_set_data_processed_limit\n\t@type= N'weekly',\n\t@limit_tb = 1\n\nsp_set_data_processed_limit\n\t@type= N'monthly',\n\t@limit_tb = 2\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "Demo",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
