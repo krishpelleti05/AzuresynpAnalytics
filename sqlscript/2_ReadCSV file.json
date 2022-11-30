@@ -1,0 +1,17 @@
+{
+	"name": "2_ReadCSV file",
+	"properties": {
+		"content": {
+			"query": "-- This is auto-generated code\nSELECT\n    TOP 100 *\nFROM\n    OPENROWSET(\n        BULK 'https://nyctaxizoneadls.dfs.core.windows.net/nyctaxidata/raw/taxi_zone.csv',\n        FORMAT = 'CSV',\n        HEADER_ROW = True,\n        PARSER_VERSION = '2.0'\n    ) AS [result]\n\nSELECT\n    TOP 100 *\nFROM\n    OPENROWSET(\n        BULK 'abfss://nyctaxidata@nyctaxizoneadls.dfs.core.windows.net/raw/taxi_zone.csv',\n        FORMAT = 'CSV',\n        HEADER_ROW = True,\n        PARSER_VERSION = '2.0'\n    ) AS [result]\n\n\nSELECT\n    TOP 100 *\nFROM\n    OPENROWSET(\n        BULK 'abfss://nyctaxidata@nyctaxizoneadls.dfs.core.windows.net/raw/taxi_zone.csv',\n        FORMAT = 'CSV',\n        HEADER_ROW = True,\n        PARSER_VERSION = '2.0',\n        FIELDTERMINATOR=',',\n        ROWTERMINATOR ='\\n'\n    ) AS [result]\n\nEXEC sp_describe_first_result_set N'\nSELECT\n    TOP 100 *\nFROM\n    OPENROWSET(\n        BULK ''abfss://nyctaxidata@nyctaxizoneadls.dfs.core.windows.net/raw/taxi_zone.csv'',\n        FORMAT = ''CSV'',\n        HEADER_ROW = True,\n        PARSER_VERSION = ''2.0''\n    ) AS [result]'\n\n\nSELECT\n    MAX(LEN(LocationID)) AS LengthLocationID,\n    MAX(LEN(Borough)) AS LengthBorough,\n    MAX(LEN(Zone)) AS Lengthzone,\n    MAX(LEN(service_zone)) AS Maxservicezone\nFROM\n    OPENROWSET(\n        BULK 'abfss://nyctaxidata@nyctaxizoneadls.dfs.core.windows.net/raw/taxi_zone.csv',\n        FORMAT = 'CSV',\n        HEADER_ROW = True,\n        PARSER_VERSION = '2.0',\n        FIELDTERMINATOR=',',\n        ROWTERMINATOR ='\\n'\n    )WITH\n    ( LocationID SMALLINT,\n    Borough VARCHAR(100),\n    Zone VARCHAR(100),\n    service_zone VARCHAR(100)\n    ) AS [result]\n\n\nSELECT\n    *\nFROM\n    OPENROWSET(\n        BULK 'abfss://nyctaxidata@nyctaxizoneadls.dfs.core.windows.net/raw/taxi_zone.csv',\n        FORMAT = 'CSV',\n        HEADER_ROW = True,\n        PARSER_VERSION = '2.0',\n        FIELDTERMINATOR=',',\n        ROWTERMINATOR ='\\n'\n    )WITH\n    ( LocationID SMALLINT,\n    Borough VARCHAR(100),\n    Zone VARCHAR(100),\n    service_zone VARCHAR(100)\n    ) AS [result]\n\n\nSELECT name,collation_name FROM sys.databases\n\nSELECT\n    *\nFROM\n    OPENROWSET(\n        BULK 'abfss://nyctaxidata@nyctaxizoneadls.dfs.core.windows.net/raw/taxi_zone.csv',\n        FORMAT = 'CSV',\n        HEADER_ROW = True,\n        PARSER_VERSION = '2.0',\n        FIELDTERMINATOR=',',\n        ROWTERMINATOR ='\\n'\n    )WITH\n    ( LocationID SMALLINT ,\n    Borough VARCHAR(100) COLLATE Latin1_General_100_CI_AI_SC_UTF8,\n    Zone VARCHAR(100) COLLATE Latin1_General_100_CI_AI_SC_UTF8,\n    service_zone VARCHAR(100) COLLATE Latin1_General_100_CI_AI_SC_UTF8\n    ) AS [result]\n\n\n\n\n\n\n\n\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "Demo",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
